@@ -1,0 +1,46 @@
+# Core Framework
+fastapi==0.111.0
+uvicorn[standard]==0.27.0
+pydantic==1.10.14
+
+# LangChain & LangGraph
+langchain==0.1.4
+langchain-openai==0.0.5
+langchain-community==0.0.16
+langgraph==0.0.20
+langsmith==0.0.83
+
+# LLM Providers
+openai==1.10.0
+tiktoken==0.5.2
+
+# Web Search & Scraping
+duckduckgo-search==4.1.0
+beautifulsoup4==4.12.3
+html2text==2020.1.16
+requests==2.31.0
+
+# Google Services
+google-api-python-client==2.116.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.0
+
+# Document Generation
+python-docx==1.1.0
+markdown==3.5.2
+
+# Utilities
+python-dotenv==1.0.1
+python-multipart==0.0.7
+aiohttp==3.9.1
+
+# Logging & Monitoring
+loguru==0.7.2
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0
+
+# Deployment
+gunicorn==21.2.0
