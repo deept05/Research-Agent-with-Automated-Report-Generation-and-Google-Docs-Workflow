@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # LangChain Research Agent
 
 An autonomous research agent built with LangChain, LangGraph, FastAPI, Google Docs, and n8n integration. Automatically searches, synthesizes, and generates comprehensive research reports with citations.
@@ -338,9 +338,3 @@ For issues and questions:
 - [ ] Collaborative research features
 - [ ] Advanced search filters and ranking
 
----
-
-Built with ❤️ using LangChain, FastAPI, and modern Python tools
-=======
-# Research-Agent-with-Automated-Report-Generation-and-Google-Docs-Workflow
->>>>>>> 939978c77287c2d63307e4e6c25a07e18c47dc55
