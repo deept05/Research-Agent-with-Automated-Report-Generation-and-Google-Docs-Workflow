@@ -15,7 +15,8 @@ if st.button("Start Research"):
             json={
                 "query": query,
                 "max_results": max_results,
-                "include_citations": include_citations
+                "include_citations": include_citations,
+                "user_id": "test-user"  # Required field
             }
         )
         if response.status_code == 200 or response.status_code == 202:
@@ -25,20 +26,26 @@ if st.button("Start Research"):
 
             while True:
                 status_response = requests.get(
-                    f"http://localhost:8000/api/v1/research/{job_id}"
+                    f"http://localhost:8000/api/v1/research/{job_id}/status"
                 )
                 data = status_response.json()
                 st.write(f"Status: {data['status']}")
                 if data["status"] == "completed":
-                    st.success("Research complete!")
-                    st.write("### Summary")
-                    st.write(data.get("summary", "No summary available."))
-                    if "google_doc_url" in data and data["google_doc_url"]:
-                        st.markdown(f"[View Google Doc]({data['google_doc_url']})")
-                    if "citations" in data and data["citations"]:
-                        st.write("### Citations")
-                        for i, citation in enumerate(data["citations"], 1):
-                            st.write(f"{i}. {citation.get('title', '')} ({citation.get('url', '')})")
+                    # Fetch full job details (not just status) to get summary/citations
+                    full_response = requests.get(f"http://localhost:8000/api/v1/research/{job_id}")
+                    if full_response.status_code == 200:
+                        full = full_response.json()
+                        st.success("Research complete!")
+                        st.write("### Summary")
+                        st.write(full.get("summary") or full.get("report_data", {}).get("executive_summary", "No summary available."))
+                        if full.get("google_doc_url"):
+                            st.markdown(f"[View Google Doc]({full.get('google_doc_url')})")
+                        if full.get("report_data") and full.get("report_data").get("citations"):
+                            st.write("### Citations")
+                            for i, citation in enumerate(full.get("report_data").get("citations"), 1):
+                                st.write(f"{i}. {citation.get('title', '')} ({citation.get('url', '')})")
+                    else:
+                        st.error("Failed to fetch full job results")
                     break
                 elif data["status"] == "failed":
                     st.error(f"Error: {data.get('error_message', 'Unknown error')}")

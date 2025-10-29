@@ -16,12 +16,18 @@ search_tool = WebSearchTool()
 content_extractor = ContentExtractor()
 relevance_filter = RelevanceFilter()
 
-# Initialize LLM
-llm = ChatOpenAI(
-    model=settings.openai_model,
-    temperature=0.3,
-    api_key=settings.openai_api_key
-)
+# Initialize LLM lazily. If OpenAI key or provider is not configured,
+# fall back to a None value and let nodes use a lightweight dummy
+# behavior so the project can run without external API keys.
+try:
+    llm = ChatOpenAI(
+        model=settings.openai_model,
+        temperature=0.3,
+        api_key=settings.openai_api_key
+    )
+except Exception:
+    app_logger.warning("LLM (ChatOpenAI) not configured or failed to initialize; using offline fallbacks")
+    llm = None
 
 
 def query_intake_node(state: ResearchState) -> Dict[str, Any]:
@@ -175,13 +181,16 @@ def synthesizer_node(state: ResearchState) -> Dict[str, Any]:
             ("user", "Research Query: {query}\n\nWeb Content:\n{content}\n\nProvide a comprehensive synthesis.")
         ])
         
-        chain = synthesis_prompt | llm
-        response = chain.invoke({
-            "query": state["query"],
-            "content": combined_content[:15000]  # Limit token usage
-        })
-        
-        state["synthesized_content"] = response.content
+        if llm is None:
+            # Offline fallback: create a simple synthesized placeholder
+            state["synthesized_content"] = "(LLM unavailable - synthesized content placeholder)"
+        else:
+            chain = synthesis_prompt | llm
+            response = chain.invoke({
+                "query": state["query"],
+                "content": combined_content[:15000]  # Limit token usage
+            })
+            state["synthesized_content"] = response.content
         
         app_logger.info("[Synthesizer] Synthesis completed")
         state["progress_messages"].append("Synthesized research findings")
@@ -257,10 +266,13 @@ def report_generator_node(state: ResearchState) -> Dict[str, Any]:
             ("system", "Generate a concise, professional title for this research report."),
             ("user", "Research Query: {query}")
         ])
-        
-        title_chain = title_prompt | llm
-        title_response = title_chain.invoke({"query": state["query"]})
-        state["report_title"] = title_response.content.strip('"')
+
+        if llm is None:
+            state["report_title"] = f"Research Report: {state['query'][:50]}"
+        else:
+            title_chain = title_prompt | llm
+            title_response = title_chain.invoke({"query": state["query"]})
+            state["report_title"] = title_response.content.strip('"')
         
         # Generate executive summary
         summary_prompt = ChatPromptTemplate.from_messages([
@@ -268,12 +280,15 @@ def report_generator_node(state: ResearchState) -> Dict[str, Any]:
             ("user", "Research Query: {query}\n\nFindings: {synthesis}")
         ])
         
-        summary_chain = summary_prompt | llm
-        summary_response = summary_chain.invoke({
-            "query": state["query"],
-            "synthesis": state["synthesized_content"][:3000]
-        })
-        state["executive_summary"] = summary_response.content
+        if llm is None:
+            state["executive_summary"] = "(LLM unavailable - summary placeholder)"
+        else:
+            summary_chain = summary_prompt | llm
+            summary_response = summary_chain.invoke({
+                "query": state["query"],
+                "synthesis": state["synthesized_content"][:3000]
+            })
+            state["executive_summary"] = summary_response.content
         
         # Create report sections
         sections = [
